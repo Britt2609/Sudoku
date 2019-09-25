@@ -5,7 +5,7 @@ from copy import deepcopy
 from heuristics1 import heuristic1
 from read import readin
 from Difference import get_pure_literals
-from keep_track_of_lit import get_not_yet_assigned_literals
+from keep_track_of_lit import initiate_truthvalues
 from updates import update_clauses
 from updates import update_literals
 
@@ -30,58 +30,64 @@ solved = False
 def random_choice(literals):
     # random choice for literal
     new_choice = random.choice(literals)
-    print("new")
-    print(new_choice)
+    # print("new")
+    # print(new_choice)
     return new_choice
 
+
+def update_truthvalues(literal, truthvalues):
+    lit = abs(literal)
+    if lit == literal:
+        truthvalues[lit] = True
+    else:
+        truthvalues[lit] = False
 
 # def split_with_copy(clauses, all_literals, truthvalues, negative_literals, positive_literals, number_of_splits):
 
 
-def dp(clauses, truthvalues, negative_literals, positive_literals, all_literals):
-    print(clauses)
+def dp(clauses, truthvalues):
+    # print(clauses)
     # print(clause)
     if [] in clauses:
-        return clauses, truthvalues, negative_literals, positive_literals, all_literals, False
+        return clauses, truthvalues, False
 
     elif not clauses:
-        return clauses, truthvalues, negative_literals, positive_literals, all_literals, True
+        return clauses, truthvalues, True
 
     else:
         stuck = False
         while not stuck:
             # kijk per clause of het unit variable is
+            # print(clauses)
             for clause in [*clauses]:
                 # print(clauses)
                 # print(clause)
 
                 # check for unit clause
                 if len(clause) == 1:
-                    print("unit")
-                    print(clause)
+                    # print("unit")
+                    # print(clause)
 
-                    unit_clause = clause[0]
-                    truthvalues[unit_clause] = True
-                    truthvalues[-unit_clause] = False
+                    unit = clause[0]
+                    update_truthvalues(unit, truthvalues)
 
                     # truth value assigned, so literals can be removed from lists
                     # (trying to find a better way to do this)
 
-                    update_literals(unit_clause, negative_literals, positive_literals, all_literals)
+                    # update_clauses(clauses, truthvalues)
 
             stuck = not update_clauses(clauses, truthvalues)
 
             # gets difference of negative and positive literals, so gives the pure literals
-            list_of_pure_literals = get_pure_literals(positive_literals, negative_literals)
+            list_of_pure_literals = get_pure_literals(clauses)
             # print("list of pure literals")
             # print(list_of_pure_literals)
 
             for literal in list_of_pure_literals:
-                truthvalues[literal] = True
-                truthvalues[-literal] = False
+                update_truthvalues(literal, truthvalues)
                 # print(truthvalues)
 
-                update_literals(literal, negative_literals, positive_literals, all_literals)
+                # update_literals(literal, negative_literals, positive_literals, all_literals)
 
                 if list_of_pure_literals:
                     list_of_pure_literals = []
@@ -89,17 +95,14 @@ def dp(clauses, truthvalues, negative_literals, positive_literals, all_literals)
             stuck = not update_clauses(clauses, truthvalues)
 
         if [] in clauses:
-            return clauses, truthvalues, negative_literals, positive_literals, all_literals, False
+            return clauses, truthvalues, False
 
         elif not clauses:
-            return clauses, truthvalues, negative_literals, positive_literals, all_literals, True
+            return clauses, truthvalues, True
 
         # start splitting here
         clauses_before_splitting = deepcopy(clauses)
-        literal_before_splitting = deepcopy(all_literals)
         truthvalues_before_splitting = deepcopy(truthvalues)
-        negative_literals_bef_spl = deepcopy(negative_literals)
-        positive_literals_bef_spl = deepcopy(positive_literals)
 
         # clauses_before_splitting2 = deepcopy(clauses)
         # literal_before_splitting2 = deepcopy(all_literals)
@@ -107,32 +110,37 @@ def dp(clauses, truthvalues, negative_literals, positive_literals, all_literals)
         # negative_literals_bef_spl2 = deepcopy(negative_literals)
         # positive_literals_bef_spl2 = deepcopy(positive_literals)
 
+        all_literals = []
+        for literal in truthvalues:
+            if truthvalues[literal] is None:
+                all_literals.append(literal)
+
         choice = random_choice(all_literals)
         # choice1 = heuristic1(clauses_before_splitting)
-        print("choice")
-        print(truthvalues)
-        print(clauses)
+        # print("choice")
+        # print(truthvalues)
+        # print(clauses)
 
-        truthvalues[choice] = True
-        truthvalues[-choice] = False
-        update_literals(choice, negative_literals, positive_literals, all_literals)
-        # update_clauses(clauses_before_splitting, truthvalues_before_splitting)
+        # WAT MOET IK HIER MEEGEVEN AAN UPDATE_TRUTHVALUES ???
+        update_truthvalues(choice, truthvalues)
+        # truthvalues[choice] = True
+        # truthvalues[-choice] = False
+        update_clauses(clauses_before_splitting, truthvalues_before_splitting)
 
         # number_of_splits += 1
 
-        clauses, truthvalues, negative_literals, positive_literals, all_literals, result = \
-            dp(clauses, truthvalues, negative_literals, positive_literals, all_literals)
+        clauses, truthvalues, result = \
+            dp(clauses, truthvalues)
 
         if result:
-            return clauses, truthvalues, negative_literals, positive_literals, all_literals, result
+            return clauses, truthvalues, result
 
-        truthvalues_before_splitting[-choice] = True
-        truthvalues_before_splitting[choice] = False
-        update_literals(-choice, negative_literals, positive_literals, all_literals)
+        update_truthvalues(-choice, truthvalues_before_splitting)
+        # truthvalues_before_splitting[-choice] = True
+        # truthvalues_before_splitting[choice] = False
+        # update_literals(-choice, negative_literals, positive_literals, all_literals)
 
-        return dp(clauses_before_splitting, truthvalues_before_splitting, negative_literals_bef_spl,
-                  positive_literals_bef_spl,
-                  literal_before_splitting)
+        return dp(clauses_before_splitting, truthvalues_before_splitting)
 
     # stuck = True
 
@@ -150,7 +158,7 @@ def dp(clauses, truthvalues, negative_literals, positive_literals, all_literals)
 def main():
     truthvalues = {}
 
-    print("Which heuristic would you like to use?\n Type 1 for the DPLL, type 2 for the other one")
+    # print("Which heuristic would you like to use?\n Type 1 for the DPLL, type 2 for the other one")
 
     # read in sudoku file, for now we have just one sudoku.
     sudoku_file = open('sudoku-example.txt', 'r')
@@ -166,18 +174,17 @@ def main():
 
     for filled_in in sudoku_unsolved:
         clauses.insert(0, filled_in)
-        print(clauses)
+        # print(clauses)
 
     # voorbeeld om te debuggen
-    # clauses = [[2, -4], [4, 3], [5], [1, -1], [-3, -2], [-5], [6, -5]]
+    # clauses = [[2, -4], [4, 3], [1, -1], [-3, -2], [5], [6, -5]]
+
 
     # make list to keep track of negative and positive literals that have no truth-value yet
     negative_literals = []
     positive_literals = []
     all_literals = []
-    positive_literals, negative_literals, all_literals = get_not_yet_assigned_literals(clauses,
-                                                                                       positive_literals,
-                                                                                       negative_literals)
+    initiate_truthvalues(clauses, truthvalues)
 
     # check for tautology (only need to do this once)
     for clause in [*clauses]:
@@ -185,18 +192,22 @@ def main():
         # check for tautology
         for literal in clause:
             if -literal in clause:
-                print("tautology")
+                # print("tautology")
                 clauses.remove(clause)
                 # print(clauses)
                 break
 
     # stuck = False
-    solution_still_possible = True
+    # solution_still_possible = True
 
     # run DP algorithm (unit, tautology and pure literal check)
-    clauses, truthvalues, negative_literals, positive_literals, all_literals, result = \
-        dp(clauses, truthvalues, negative_literals, positive_literals, all_literals)
+    clauses, truthvalues, result = \
+        dp(clauses, truthvalues)
 
+    if result:
+        for literal in truthvalues:
+            if truthvalues[literal] is None:
+                truthvalues[literal] = random.choice([True, False])
     print(truthvalues)
     print(result)
 
