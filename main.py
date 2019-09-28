@@ -1,40 +1,41 @@
+# Updates.py moet nog worden gecommend
+
 import random
 import sys
+import time
 from copy import deepcopy
 
-from heuristics1 import heuristic1
+from heuristics import heuristic1
 from read import readin
-from Difference import get_pure_literals
-from keep_track_of_lit import initiate_truthvalues
+from pure_literals import get_pure_literals
+from init_truthvalues import initiate_truthvalues
 from updates import update_clauses
-from updates import update_literals
+from heuristics import heuristic2
 
-numbers_filled_in = []
-numbers_not_possible = []
-statements = []
 # Size moet uit het grote document met meerdere oplossingen gehaald worden.
 # de sudokus uit dit document gaan we veranderen naar de vorm van sudoku-example,
 # zodat we onderstaande code daarvoor kunnen gebruiken.
 size = 9
-# new_truthvalues gives the literal and bool 1 if it is positive and bool 0 if it is negative
-# new_truthvalues = {}
 
-# to keep track of all the truthvalues
+# Initiate a dictionary to keep track of the truthvalues of all the literals.
+# Contains only positive literals as keys, with True or False (or None if not assigned yet) as value.
 truthvalues = {}
-decisions = []
-# global number_of_splits
-# number_of_splits = 0
+
+# Initiate variable to keep track of the number of splits.
+number_of_splits = 0
+
+# Initiate variable to check if a sudoku is solved.
 solved = False
 
 
+# Make a random decision which literal to give a truthvalue.
 def random_choice(literals):
-    # random choice for literal
     new_choice = random.choice(literals)
-    # print("new")
-    # print(new_choice)
+
     return new_choice
 
 
+# Takes a literal that gets a truthvalue and updates the dictionary truthvalues.
 def update_truthvalues(literal, truthvalues):
     lit = abs(literal)
     if lit == literal:
@@ -42,57 +43,46 @@ def update_truthvalues(literal, truthvalues):
     else:
         truthvalues[lit] = False
 
-# def split_with_copy(clauses, all_literals, truthvalues, negative_literals, positive_literals, number_of_splits):
 
-
+# The Davis Putnam algorithm searches for easy choices untill there are none left. When none are left,
+# it runs an heuristic that decides which literal to give a truthvalue.
+# This algorithm uses backtracking with those decisions.
 def dp(clauses, truthvalues):
-    # print(clauses)
-    # print(clause)
+
+    # If an empty clause is found, the current SAT problem is unsolvable.
     if [] in clauses:
         return clauses, truthvalues, False
 
+    # If the list of clauses is empty, we found a solution.
     elif not clauses:
         return clauses, truthvalues, True
 
+    # Try to solve the SAT when the SAT is not solved yet and is still solvable.
     else:
         stuck = False
+        # Make easy decisions while possible.
         while not stuck:
-            # kijk per clause of het unit variable is
-            # print(clauses)
+            # Check if the list of clauses contains an unit clause.
+            # For the SAT to be solvable, the literal in the unit clause has to be true.
             for clause in [*clauses]:
-                # print(clauses)
-                # print(clause)
-
-                # check for unit clause
                 if len(clause) == 1:
-                    # print("unit")
-                    # print(clause)
+                    literal = clause[0]
+                    update_truthvalues(literal, truthvalues)
 
-                    unit = clause[0]
-                    update_truthvalues(unit, truthvalues)
-
-                    # truth value assigned, so literals can be removed from lists
-                    # (trying to find a better way to do this)
-
-                    # update_clauses(clauses, truthvalues)
-
+            # Update clauses with these new truthvalues.
             stuck = not update_clauses(clauses, truthvalues)
 
-            # gets difference of negative and positive literals, so gives the pure literals
+            # Gets difference of negative and positive literals, which are the pure literals.
             list_of_pure_literals = get_pure_literals(clauses)
-            # print("list of pure literals")
-            # print(list_of_pure_literals)
 
+            # Update truthvalues with the pure literals.
             for literal in list_of_pure_literals:
                 update_truthvalues(literal, truthvalues)
-                # print(truthvalues)
 
-                # update_literals(literal, negative_literals, positive_literals, all_literals)
-
-                if list_of_pure_literals:
-                    list_of_pure_literals = []
-
-            stuck = not update_clauses(clauses, truthvalues)
+            # If a pure literal is found, empty the set for next usage and update the clauses.
+            if list_of_pure_literals:
+                list_of_pure_literals = []
+                stuck = not update_clauses(clauses, truthvalues)
 
         if [] in clauses:
             return clauses, truthvalues, False
@@ -100,34 +90,23 @@ def dp(clauses, truthvalues):
         elif not clauses:
             return clauses, truthvalues, True
 
-        # start splitting here
         clauses_before_splitting = deepcopy(clauses)
         truthvalues_before_splitting = deepcopy(truthvalues)
-
-        # clauses_before_splitting2 = deepcopy(clauses)
-        # literal_before_splitting2 = deepcopy(all_literals)
-        # truthvalues_before_splitting2 = deepcopy(truthvalues)
-        # negative_literals_bef_spl2 = deepcopy(negative_literals)
-        # positive_literals_bef_spl2 = deepcopy(positive_literals)
 
         all_literals = []
         for literal in truthvalues:
             if truthvalues[literal] is None:
                 all_literals.append(literal)
 
-        choice = random_choice(all_literals)
-        # choice1 = heuristic1(clauses_before_splitting)
-        # print("choice")
-        # print(truthvalues)
-        # print(clauses)
+        # choice = random_choice(all_literals)
+        choice = heuristic1(clauses_before_splitting)
+        # choice = heuristic2(clauses_before_splitting)
 
-        # WAT MOET IK HIER MEEGEVEN AAN UPDATE_TRUTHVALUES ???
+        global number_of_splits
+        number_of_splits += 1
+
         update_truthvalues(choice, truthvalues)
-        # truthvalues[choice] = True
-        # truthvalues[-choice] = False
         update_clauses(clauses_before_splitting, truthvalues_before_splitting)
-
-        # number_of_splits += 1
 
         clauses, truthvalues, result = \
             dp(clauses, truthvalues)
@@ -136,74 +115,50 @@ def dp(clauses, truthvalues):
             return clauses, truthvalues, result
 
         update_truthvalues(-choice, truthvalues_before_splitting)
-        # truthvalues_before_splitting[-choice] = True
-        # truthvalues_before_splitting[choice] = False
-        # update_literals(-choice, negative_literals, positive_literals, all_literals)
 
         return dp(clauses_before_splitting, truthvalues_before_splitting)
 
-    # stuck = True
 
-    # print(clauses)
-    # if not clauses:
-    #   print(truthvalues)
-    #  return "solved"
-
-    # if not stuck:
-    #  dp(clauses, truthvalues, negative_literals, positive_literals, all_literals)
-
-    # return clauses, truthvalues, negative_literals, positive_literals, all_literals, True
-
-
+# Read in sudoku files and solve the sudokus one by one.
 def main():
     truthvalues = {}
 
-    # print("Which heuristic would you like to use?\n Type 1 for the DPLL, type 2 for the other one")
+    # print("Which heuristic would you like to use?\n Type 1 for the Moms, type 2 for the other one")
 
-    # read in sudoku file, for now we have just one sudoku.
+    # Open the file with sudoku's.
     sudoku_file = open('sudoku-example.txt', 'r')
     file_contents = sudoku_file.readlines()
     sudoku_unsolved = readin(file_contents)
 
+    # Open the file with sudoku rules (already in DIMAC notation).
     sudoku_rules = open('sudoku-rules.txt', 'r')
     rules = sudoku_rules.readlines()
     sudoku_rules.close()
 
-    # uncomment to get sudoku to be tested
+    # Append the rules to the clauses.
     clauses = readin(rules)
 
+    # Append the sudoku to the clauses.
     for filled_in in sudoku_unsolved:
         clauses.insert(0, filled_in)
-        # print(clauses)
 
-    # voorbeeld om te debuggen
-    # clauses = [[2, -4], [4, 3], [1, -1], [-3, -2], [5], [6, -5]]
-
-
-    # make list to keep track of negative and positive literals that have no truth-value yet
-    negative_literals = []
-    positive_literals = []
-    all_literals = []
+    # Make dictionary to keep track of truth values of literals.
     initiate_truthvalues(clauses, truthvalues)
 
-    # check for tautology (only need to do this once)
+    # Check for tautologies in the clauses (only need to do this once).
     for clause in [*clauses]:
 
-        # check for tautology
+        # If tautology is found, remove the corresponding clause.
         for literal in clause:
             if -literal in clause:
-                # print("tautology")
                 clauses.remove(clause)
-                # print(clauses)
                 break
 
-    # stuck = False
-    # solution_still_possible = True
+    # Run DP algorithm which checks for unit clauses and pure literals and makes a split when needed.
+    clauses, truthvalues, result = dp(clauses, truthvalues)
 
-    # run DP algorithm (unit, tautology and pure literal check)
-    clauses, truthvalues, result = \
-        dp(clauses, truthvalues)
-
+    # If we found a solution and we have literals that don't have a value yet,
+    # we can assign them a truthvalue randomly.
     if result:
         for literal in truthvalues:
             if truthvalues[literal] is None:
@@ -212,4 +167,10 @@ def main():
     print(result)
 
 # Call the main function
+
+
+# Keep track of runtime.
+start_time = time.time()
 main()
+print("--- %s seconds ---" % (time.time() - start_time))
+print("number of splits: %i" % number_of_splits)
