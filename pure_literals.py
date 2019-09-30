@@ -13,17 +13,7 @@ def get_pure_literals(clauses):
                 if literal not in positive_literals:
                     positive_literals.append(literal)
 
-    list_difference = []
-    for literal in positive_literals:
-        if literal not in negative_literals:
-            list_difference.append(literal)
-    for literal in negative_literals:
-        if literal not in positive_literals:
-            list_difference.append(literal)
     # Get the difference of the lists
-    # list_difference = list(set(positive_literals) ^ (set(negative_literals)))
-    # for i in positive_literals + negative_literals:
-    #     if i not in positive_literals or i not in negative_literals:
-    #         list_difference.append(i)
+    list_difference = list(set(positive_literals) ^ (set(negative_literals)))
 
     return list_difference
