@@ -12,11 +12,6 @@ from init_truthvalues import initiate_truthvalues
 from updates import update_clauses
 from heuristics import heuristic2
 
-# Size moet uit het grote document met meerdere oplossingen gehaald worden.
-# de sudokus uit dit document gaan we veranderen naar de vorm van sudoku-example,
-# zodat we onderstaande code daarvoor kunnen gebruiken.
-size = 9
-
 # Initiate a dictionary to keep track of the truthvalues of all the literals.
 # Contains only positive literals as keys, with True or False (or None if not assigned yet) as value.
 truthvalues = {}
@@ -62,15 +57,17 @@ def dp(clauses, truthvalues):
         stuck = False
         # Make easy decisions while possible.
         while not stuck:
-            # Check if the list of clauses contains an unit clause.
-            # For the SAT to be solvable, the literal in the unit clause has to be true.
-            for clause in [*clauses]:
-                if len(clause) == 1:
-                    literal = clause[0]
-                    update_truthvalues(literal, truthvalues)
+            possible = True
+            while possible:
+                # Check if the list of clauses contains an unit clause.
+                # For the SAT to be solvable, the literal in the unit clause has to be true.
+                for clause in [*clauses]:
+                    if len(clause) == 1:
+                        literal = clause[0]
+                        update_truthvalues(literal, truthvalues)
 
-            # Update clauses with these new truthvalues.
-            stuck = not update_clauses(clauses, truthvalues)
+                stuck = not update_clauses(clauses, truthvalues)
+                possible = not stuck
 
             # Gets difference of negative and positive literals, which are the pure literals.
             list_of_pure_literals = get_pure_literals(clauses)
@@ -99,8 +96,8 @@ def dp(clauses, truthvalues):
                 all_literals.append(literal)
 
         # choice = random_choice(all_literals)
-        choice = heuristic1(clauses_before_splitting)
-        # choice = heuristic2(clauses_before_splitting)
+        # choice = heuristic1(clauses_before_splitting)
+        choice = heuristic2(clauses_before_splitting)
 
         global number_of_splits
         number_of_splits += 1
@@ -126,7 +123,9 @@ def main():
     # print("Which heuristic would you like to use?\n Type 1 for the Moms, type 2 for the other one")
 
     # Open the file with sudoku's.
-    sudoku_file = open('sudoku-example.txt', 'r')
+    # sudoku_file = open('sudoku-example.txt', 'r')
+    sudoku_file = open('test_dimacs_general.txt', 'r')
+    # sudoku_file = open('sudo2.txt', 'r')
     file_contents = sudoku_file.readlines()
     sudoku_unsolved = readin(file_contents)
 
