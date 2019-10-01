@@ -46,3 +46,11 @@ def update_literals(literal, negative_literals, positive_literals, all_literals)
     if -literal in positive_literals:
         positive_literals.remove(-literal)
 
+
+# Takes a literal that gets a truthvalue and updates the dictionary truthvalues.
+def update_truthvalues(literal, truthvalues):
+    lit = abs(literal)
+    if lit == literal:
+        truthvalues[lit] = True
+    else:
+        truthvalues[lit] = False

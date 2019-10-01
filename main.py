@@ -10,10 +10,12 @@ import mxklabs.dimacs
 from mxklabs.dimacs import Dimacs
 
 from heuristics import heuristic1
+from io_tools import read_sudokus
 from read import readin
 from pure_literals import get_pure_literals
 from init_truthvalues import initiate_truthvalues
 from updates import update_clauses
+from updates import update_truthvalues
 from heuristics import heuristic2
 
 # Initiate a dictionary to keep track of the truthvalues of all the literals.
@@ -32,15 +34,6 @@ def random_choice(literals):
     new_choice = random.choice(literals)
 
     return new_choice
-
-
-# Takes a literal that gets a truthvalue and updates the dictionary truthvalues.
-def update_truthvalues(literal, truthvalues):
-    lit = abs(literal)
-    if lit == literal:
-        truthvalues[lit] = True
-    else:
-        truthvalues[lit] = False
 
 
 # The Davis Putnam algorithm searches for easy choices untill there are none left. When none are left,
@@ -100,7 +93,7 @@ def dp(clauses, truthvalues):
                 all_literals.append(literal)
 
         if heuristic == "heuristic 1":
-            choice = heuristic1(clauses_before_splitting)
+            choice = heuristic1(clauses_before_splitting, truthvalues)
         elif heuristic == "heuristic 2":
             choice = heuristic2(clauses_before_splitting)
         else:
@@ -120,6 +113,8 @@ def dp(clauses, truthvalues):
 
         update_truthvalues(-choice, truthvalues_before_splitting)
 
+        global number_of_backtracks
+        number_of_backtracks += 1
         return dp(clauses_before_splitting, truthvalues_before_splitting)
 
 
@@ -134,8 +129,8 @@ def main():
     # global SAT_solution_filename
     # SAT_solution_filename = input("Name: ")
 
-    print("Which heuristic would you like to use?\n Type \"heuristic 1\" for the Moms,"
-          " type \"heuristic2\" for the other one")
+    print("Which heuristic would you like to use?\n Type \"heuristic 1\" for the Jereslow Wang,"
+          " type \"heuristic 2\" for the MOM\'s")
     global heuristic
     heuristic = input("Select: ")
 
@@ -146,40 +141,10 @@ def main():
 
     # Open the file with SAT problems.
 
-    # problem = mxklabs.dimacs.read(SAT_problem_filename)
-    # solved = mxklabs.dimacs.read(SAT_solution_filename)
-
-    # SAT_file = open(SAT_problem_filename, 'r')
-    # file_contents = SAT_file.readlines()
-    # unsolved = readin(file_contents)
-    # print(unsolved)
-
-    csvFile = open('output.csv', 'w')
-    writer = csv.writer(csvFile)
-
-    # for i in range(1, 9):
-    global truthvalues
-    truthvalues = {}
-
-    global number_of_splits
-    number_of_splits = 0
-
-    global solved
-    solved = False
-
-    global result
-    result = False
-
-    global clauses
-    clauses = []
-
-    # sudoku_file = open('sudoku-example.txt', 'r')
-    # sudoku_file = open('test_dimacs_general.txt', 'r')
-    # sudoku_file = open('sudo2.txt', 'r')
-
-    sudoku_file = open("sudo1.txt", 'r')
+    sudoku_file = open("5 sudo.txt", 'r')
     file_contents = sudoku_file.readlines()
     sudoku_unsolved = readin(file_contents)
+    sudokus = read_sudokus("1000 sudokus.txt")
 
     # Open the file with sudoku rules (already in DIMAC notation).
     sudoku_rules = open('sudoku-rules.txt', 'r')
@@ -189,45 +154,52 @@ def main():
     # Append the rules to the clauses.
     clauses = readin(rules)
 
-    # Append the sudoku to the clauses.
-    for filled_in in sudoku_unsolved:
-        clauses.insert(0, filled_in)
+    for problem in sudokus:
+        # Append the sudoku to the clauses.
+        for filled_in in problem:
+            clauses.insert(0, filled_in)
 
-    # Make dictionary to keep track of truth values of literals.
-    initiate_truthvalues(clauses, truthvalues)
+        # Make dictionary to keep track of truth values of literals.
+        initiate_truthvalues(clauses, truthvalues)
 
-    # Check for tautologies in the clauses (only need to do this once).
-    for clause in [*clauses]:
+        # Check for tautologies in the clauses (only need to do this once).
+        for clause in [*clauses]:
 
-        # If tautology is found, remove the corresponding clause.
-        for literal in clause:
-            if -literal in clause:
-                clauses.remove(clause)
-                break
+            # If tautology is found, remove the corresponding clause.
+            for literal in clause:
+                if -literal in clause:
+                    clauses.remove(clause)
+                    break
 
-    # Run DP algorithm which checks for unit clauses and pure literals and makes a split when needed.
-    clauses, truthvalues, result = dp(clauses, truthvalues)
+        # Run DP algorithm which checks for unit clauses and pure literals and makes a split when needed.
+        clauses, truthvalues, result = dp(clauses, truthvalues)
 
-    # If we found a solution and we have literals that don't have a value yet,
-    # we can assign them a truthvalue randomly.
-    if result:
+        # If we found a solution and we have literals that don't have a value yet,
+        # we can assign them a truthvalue randomly.
+        if result:
+            for literal in truthvalues:
+                if truthvalues[literal] is None:
+                    truthvalues[literal] = random.choice([True, False])
+            print("Satisfiable")
+        else:
+            print("Unsatisfiable")
+        print(truthvalues)
+
+        runtime = (time.time() - start_time)
+        print("--- %s seconds ---" % runtime)
+        print("number of splits: %i" % number_of_splits)
+        print("number of backtracks: %i" % number_of_backtracks)
+
+        with open('output.csv', 'a') as csvFile:
+            writer = csv.writer(csvFile)
+            writer.writerow([runtime, number_of_splits])
+            csvFile.close()
+        numb = 0
         for literal in truthvalues:
-            if truthvalues[literal] is None:
-                truthvalues[literal] = random.choice([True, False])
-        print("Satisfiable")
-    else:
-        print("Unsatisfiable")
-    print(truthvalues)
-
-    runtime = (time.time() - start_time)
-    print("--- %s seconds ---" % runtime)
-    print("number of splits: %i" % number_of_splits)
-
-    writer.writerow([runtime, number_of_splits])
-    csvFile.close()
-    for literal in truthvalues:
-        if truthvalues[literal] is True:
-            print(literal)
+            if truthvalues[literal] is True:
+                print(literal)
+                numb += 1
+        # print(numb)
 
 # Call the main function
 
