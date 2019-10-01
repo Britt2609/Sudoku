@@ -1,18 +1,42 @@
-def heuristic1(clauses):
+from _pydecimal import Decimal
+
+# import numpy as np
+
+
+def heuristic1(clauses, truthvalues):
     # Count how many times all literals occur and then choose the most common for the split.
 
-    diction = {}
-    for clause in clauses:
-        for literal in clause:
-            if abs(literal) not in diction:
-                diction[abs(literal)] = 1
-            else:
-                diction[abs(literal)] += 1
-    # print(diction)
+    choice = 0
+    # best_jw = 0
+    # for literal in truthvalues:
+    #     if truthvalues[literal] is None:
+    #         pos = 0
+    #         neg = 0
+    #         for clause in clauses:
+    #             if literal in clause:
+    #                 pos += Decimal(1/np.power(2, len(clause)))
+    #             elif -literal in clause:
+    #                 neg += Decimal(1/np.power(2, len(clause)))
+    #         if (pos + neg) > best_jw:
+    #             best_jw = pos + neg
+    #             if pos >= neg:
+    #                 choice = literal
+    #             else:
+    #                 choice = -literal
+    return choice
 
-    maxi = max(diction, key=diction.get)
-    # print(maxi)
-    return maxi
+    # diction = {}
+    # for clause in clauses:
+    #     for literal in clause:
+    #         if abs(literal) not in diction:
+    #             diction[abs(literal)] = 1
+    #         else:
+    #             diction[abs(literal)] += 1
+    # # print(diction)
+    #
+    # maxi = max(diction, key=diction.get)
+    # # print(maxi)
+    # return maxi
 
 
 k = 1

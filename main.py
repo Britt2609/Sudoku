@@ -3,7 +3,11 @@
 import random
 import sys
 import time
+import csv
 from copy import deepcopy
+
+import mxklabs.dimacs
+from mxklabs.dimacs import Dimacs
 
 from heuristics import heuristic1
 from read import readin
@@ -79,7 +83,7 @@ def dp(clauses, truthvalues):
             # If a pure literal is found, empty the set for next usage and update the clauses.
             if list_of_pure_literals:
                 list_of_pure_literals = []
-                stuck = not update_clauses(clauses, truthvalues)
+            stuck = not update_clauses(clauses, truthvalues)
 
         if [] in clauses:
             return clauses, truthvalues, False
@@ -95,9 +99,12 @@ def dp(clauses, truthvalues):
             if truthvalues[literal] is None:
                 all_literals.append(literal)
 
-        # choice = random_choice(all_literals)
-        # choice = heuristic1(clauses_before_splitting)
-        choice = heuristic2(clauses_before_splitting)
+        if heuristic == "heuristic 1":
+            choice = heuristic1(clauses_before_splitting)
+        elif heuristic == "heuristic 2":
+            choice = heuristic2(clauses_before_splitting)
+        else:
+            choice = random_choice(all_literals)
 
         global number_of_splits
         number_of_splits += 1
@@ -118,14 +125,59 @@ def dp(clauses, truthvalues):
 
 # Read in sudoku files and solve the sudokus one by one.
 def main():
+
+    # print("What file do you want to use as input?: ")
+    # global SAT_problem_filename
+    # SAT_problem_filename = input("Name: ")
+
+    # print("What filename do you want to use for output?: ")
+    # global SAT_solution_filename
+    # SAT_solution_filename = input("Name: ")
+
+    print("Which heuristic would you like to use?\n Type \"heuristic 1\" for the Moms,"
+          " type \"heuristic2\" for the other one")
+    global heuristic
+    heuristic = input("Select: ")
+
+    if heuristic != "heuristic 1" and heuristic != "heuristic 2":
+        print("invalid input, split decisions will now be made random")
+
+    start_time = time.time()
+
+    # Open the file with SAT problems.
+
+    # problem = mxklabs.dimacs.read(SAT_problem_filename)
+    # solved = mxklabs.dimacs.read(SAT_solution_filename)
+
+    # SAT_file = open(SAT_problem_filename, 'r')
+    # file_contents = SAT_file.readlines()
+    # unsolved = readin(file_contents)
+    # print(unsolved)
+
+    csvFile = open('output.csv', 'w')
+    writer = csv.writer(csvFile)
+
+    # for i in range(1, 9):
+    global truthvalues
     truthvalues = {}
 
-    # print("Which heuristic would you like to use?\n Type 1 for the Moms, type 2 for the other one")
+    global number_of_splits
+    number_of_splits = 0
 
-    # Open the file with sudoku's.
+    global solved
+    solved = False
+
+    global result
+    result = False
+
+    global clauses
+    clauses = []
+
     # sudoku_file = open('sudoku-example.txt', 'r')
-    sudoku_file = open('test_dimacs_general.txt', 'r')
+    # sudoku_file = open('test_dimacs_general.txt', 'r')
     # sudoku_file = open('sudo2.txt', 'r')
+
+    sudoku_file = open("sudo1.txt", 'r')
     file_contents = sudoku_file.readlines()
     sudoku_unsolved = readin(file_contents)
 
@@ -162,14 +214,24 @@ def main():
         for literal in truthvalues:
             if truthvalues[literal] is None:
                 truthvalues[literal] = random.choice([True, False])
+        print("Satisfiable")
+    else:
+        print("Unsatisfiable")
     print(truthvalues)
-    print(result)
+
+    runtime = (time.time() - start_time)
+    print("--- %s seconds ---" % runtime)
+    print("number of splits: %i" % number_of_splits)
+
+    writer.writerow([runtime, number_of_splits])
+    csvFile.close()
+    for literal in truthvalues:
+        if truthvalues[literal] is True:
+            print(literal)
 
 # Call the main function
 
 
 # Keep track of runtime.
-start_time = time.time()
+
 main()
-print("--- %s seconds ---" % (time.time() - start_time))
-print("number of splits: %i" % number_of_splits)
