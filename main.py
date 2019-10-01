@@ -6,11 +6,11 @@ import time
 import csv
 from copy import deepcopy
 
-import mxklabs.dimacs
-from mxklabs.dimacs import Dimacs
+#import mxklabs.dimacs
+#from mxklabs.dimacs import Dimacs
 
 from heuristics import heuristic1
-from io_tools import read_sudokus
+from io_tools import read_sudokus, read_dimacs
 from read import readin
 from pure_literals import get_pure_literals
 from init_truthvalues import initiate_truthvalues
@@ -20,10 +20,8 @@ from heuristics import heuristic2
 
 # Initiate a dictionary to keep track of the truthvalues of all the literals.
 # Contains only positive literals as keys, with True or False (or None if not assigned yet) as value.
-truthvalues = {}
+# truthvalues = {}
 
-# Initiate variable to keep track of the number of splits.
-number_of_splits = 0
 
 # Initiate variable to check if a sudoku is solved.
 solved = False
@@ -35,87 +33,102 @@ def random_choice(literals):
 
     return new_choice
 
+class Satisfier():
 
-# The Davis Putnam algorithm searches for easy choices untill there are none left. When none are left,
-# it runs an heuristic that decides which literal to give a truthvalue.
-# This algorithm uses backtracking with those decisions.
-def dp(clauses, truthvalues):
+    def __init__(self):
+        self.number_of_splits = 0
+        self.number_of_backtracks = 0
+        self.number_of_simplifications = 0
 
-    # If an empty clause is found, the current SAT problem is unsolvable.
-    if [] in clauses:
-        return clauses, truthvalues, False
+    def solve(self, clauses, truthvalues):
+        # Check for tautologies in the clauses (only need to do this once).
+        for clause in [*clauses]:
+            # If tautology is found, remove the corresponding clause.
+            for literal in clause:
+                if -literal in clause:
+                    clauses.remove(clause)
+                    break
+        return self.dp(clauses, truthvalues)
 
-    # If the list of clauses is empty, we found a solution.
-    elif not clauses:
-        return clauses, truthvalues, True
+    # The Davis Putnam algorithm searches for easy choices untill there are none left. When none are left,
+    # it runs an heuristic that decides which literal to give a truthvalue.
+    # This algorithm uses backtracking with those decisions.
+    def dp(self, clauses, truthvalues):
 
-    # Try to solve the SAT when the SAT is not solved yet and is still solvable.
-    else:
-        stuck = False
-        # Make easy decisions while possible.
-        while not stuck:
-            possible = True
-            while possible:
-                # Check if the list of clauses contains an unit clause.
-                # For the SAT to be solvable, the literal in the unit clause has to be true.
-                for clause in [*clauses]:
-                    if len(clause) == 1:
-                        literal = clause[0]
-                        update_truthvalues(literal, truthvalues)
-
-                stuck = not update_clauses(clauses, truthvalues)
-                possible = not stuck
-
-            # Gets difference of negative and positive literals, which are the pure literals.
-            list_of_pure_literals = get_pure_literals(clauses)
-
-            # Update truthvalues with the pure literals.
-            for literal in list_of_pure_literals:
-                update_truthvalues(literal, truthvalues)
-
-            # If a pure literal is found, empty the set for next usage and update the clauses.
-            if list_of_pure_literals:
-                list_of_pure_literals = []
-            stuck = not update_clauses(clauses, truthvalues)
-
+        # If an empty clause is found, the current SAT problem is unsolvable.
         if [] in clauses:
             return clauses, truthvalues, False
 
+        # If the list of clauses is empty, we found a solution.
         elif not clauses:
             return clauses, truthvalues, True
 
-        clauses_before_splitting = deepcopy(clauses)
-        truthvalues_before_splitting = deepcopy(truthvalues)
-
-        all_literals = []
-        for literal in truthvalues:
-            if truthvalues[literal] is None:
-                all_literals.append(literal)
-
-        if heuristic == "heuristic 1":
-            choice = heuristic1(clauses_before_splitting, truthvalues)
-        elif heuristic == "heuristic 2":
-            choice = heuristic2(clauses_before_splitting)
+        # Try to solve the SAT when the SAT is not solved yet and is still solvable.
         else:
-            choice = random_choice(all_literals)
+            stuck = False
+            # Make easy decisions while possible.
+            while not stuck:
+                self.number_of_simplifications += 1
+                possible = True
+                while possible:
+                    # Check if the list of clauses contains an unit clause.
+                    # For the SAT to be solvable, the literal in the unit clause has to be true.
+                    for clause in [*clauses]:
+                        if len(clause) == 1:
+                            literal = clause[0]
+                            update_truthvalues(literal, truthvalues)
 
-        global number_of_splits
-        number_of_splits += 1
+                    stuck = not update_clauses(clauses, truthvalues)
+                    possible = not stuck
 
-        update_truthvalues(choice, truthvalues)
-        update_clauses(clauses_before_splitting, truthvalues_before_splitting)
+                # Gets difference of negative and positive literals, which are the pure literals.
+                list_of_pure_literals = get_pure_literals(clauses)
 
-        clauses, truthvalues, result = \
-            dp(clauses, truthvalues)
+                # Update truthvalues with the pure literals.
+                for literal in list_of_pure_literals:
+                    update_truthvalues(literal, truthvalues)
 
-        if result:
-            return clauses, truthvalues, result
+                # If a pure literal is found, empty the set for next usage and update the clauses.
+                if list_of_pure_literals:
+                    list_of_pure_literals = []
+                stuck = not update_clauses(clauses, truthvalues)
 
-        update_truthvalues(-choice, truthvalues_before_splitting)
+            if [] in clauses:
+                return clauses, truthvalues, False
 
-        global number_of_backtracks
-        number_of_backtracks += 1
-        return dp(clauses_before_splitting, truthvalues_before_splitting)
+            elif not clauses:
+                return clauses, truthvalues, True
+
+            clauses_before_splitting = deepcopy(clauses)
+            truthvalues_before_splitting = deepcopy(truthvalues)
+
+            all_literals = []
+            for literal in truthvalues:
+                if truthvalues[literal] is None:
+                    all_literals.append(literal)
+
+            if heuristic == "heuristic 1":
+                choice = heuristic1(clauses_before_splitting, truthvalues)
+            elif heuristic == "heuristic 2":
+                choice = heuristic2(clauses_before_splitting)
+            else:
+                choice = random_choice(all_literals)
+
+            self.number_of_splits += 1
+
+            update_truthvalues(choice, truthvalues)
+            update_clauses(clauses_before_splitting, truthvalues_before_splitting)
+
+            clauses, truthvalues, result = \
+                self.dp(clauses, truthvalues)
+
+            if result:
+                return clauses, truthvalues, result
+
+            update_truthvalues(-choice, truthvalues_before_splitting)
+
+            self.number_of_backtracks += 1
+            return self.dp(clauses_before_splitting, truthvalues_before_splitting)
 
 
 # Read in sudoku files and solve the sudokus one by one.
@@ -137,7 +150,7 @@ def main():
     if heuristic != "heuristic 1" and heuristic != "heuristic 2":
         print("invalid input, split decisions will now be made random")
 
-    start_time = time.time()
+    # start_time = time.time()
 
     # Open the file with SAT problems.
 
@@ -147,32 +160,37 @@ def main():
     sudokus = read_sudokus("1000 sudokus.txt")
 
     # Open the file with sudoku rules (already in DIMAC notation).
-    sudoku_rules = open('sudoku-rules.txt', 'r')
-    rules = sudoku_rules.readlines()
-    sudoku_rules.close()
+    # sudoku_rules = open('sudoku-rules.txt', 'r')
+    # rules = sudoku_rules.readlines()
+    # sudoku_rules.close()
 
     # Append the rules to the clauses.
-    clauses = readin(rules)
+    rules = read_dimacs('sudoku-rules.txt')
+
+    with open('output.csv', 'w') as csvFile:
+        writer = csv.writer(csvFile)
+        writer.writerow(["runtime, number_of_splits, number_of_backtracks, number_of_simplifications".split(', ')])
 
     for problem in sudokus:
+        clauses = deepcopy(problem)
+        clauses.extend(rules)
+
         # Append the sudoku to the clauses.
-        for filled_in in problem:
-            clauses.insert(0, filled_in)
+        # for filled_in in problem:
+        #     clauses.insert(0, filled_in)
 
         # Make dictionary to keep track of truth values of literals.
-        initiate_truthvalues(clauses, truthvalues)
-
-        # Check for tautologies in the clauses (only need to do this once).
-        for clause in [*clauses]:
-
-            # If tautology is found, remove the corresponding clause.
-            for literal in clause:
-                if -literal in clause:
-                    clauses.remove(clause)
-                    break
+        lits = list(set([abs(x) for c in clauses for x in c]))
+        truthvalues = {key: None for key in lits}
 
         # Run DP algorithm which checks for unit clauses and pure literals and makes a split when needed.
-        clauses, truthvalues, result = dp(clauses, truthvalues)
+        satisfier = Satisfier()
+        start_time = time.time()
+        _, truthvalues, result = satisfier.solve(clauses, truthvalues)
+        runtime = time.time() - start_time
+        number_of_splits = satisfier.number_of_splits
+        number_of_backtracks = satisfier.number_of_backtracks
+        number_of_simplifications = satisfier.number_of_simplifications
 
         # If we found a solution and we have literals that don't have a value yet,
         # we can assign them a truthvalue randomly.
@@ -183,22 +201,22 @@ def main():
             print("Satisfiable")
         else:
             print("Unsatisfiable")
+            # break
         print(truthvalues)
 
-        runtime = (time.time() - start_time)
+        # runtime = (time.time() - start_time)
         print("--- %s seconds ---" % runtime)
         print("number of splits: %i" % number_of_splits)
         print("number of backtracks: %i" % number_of_backtracks)
 
         with open('output.csv', 'a') as csvFile:
             writer = csv.writer(csvFile)
-            writer.writerow([runtime, number_of_splits])
-            csvFile.close()
+            writer.writerow([runtime, number_of_splits, number_of_backtracks, number_of_simplifications])
         numb = 0
-        for literal in truthvalues:
-            if truthvalues[literal] is True:
-                print(literal)
-                numb += 1
+        # for literal in truthvalues:
+        #     if truthvalues[literal] is True:
+        #         print(literal)
+        #         numb += 1
         # print(numb)
 
 # Call the main function
