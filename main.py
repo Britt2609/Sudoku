@@ -94,6 +94,7 @@ class Satisfier():
                     list_of_pure_literals = []
                 stuck = not update_clauses(clauses, truthvalues)
 
+            # If clauses contains an empty clause.
             if [] in clauses:
                 return clauses, truthvalues, False
 
@@ -207,7 +208,7 @@ def main():
         with open('output.csv', 'a') as csvFile:
             writer = csv.writer(csvFile)
             writer.writerow([runtime, number_of_splits, number_of_backtracks, number_of_simplifications])
-        numb = 0
+        # numb = 0
         # for literal in truthvalues:
         #     if truthvalues[literal] is True:
         #         print(literal)
