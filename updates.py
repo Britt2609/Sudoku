@@ -31,20 +31,20 @@ def update_clauses(clauses, truthvalues):
     return stuck
 
 
-def update_literals(literal, negative_literals, positive_literals, all_literals):
-
-    if literal in all_literals:
-        all_literals.remove(literal)
-    if -literal in all_literals:
-        all_literals.remove(-literal)
-    if literal in negative_literals:
-        negative_literals.remove(literal)
-    if -literal in negative_literals:
-        negative_literals.remove(-literal)
-    if literal in positive_literals:
-        positive_literals.remove(literal)
-    if -literal in positive_literals:
-        positive_literals.remove(-literal)
+# def update_literals(literal, negative_literals, positive_literals, all_literals):
+#
+#     if literal in all_literals:
+#         all_literals.remove(literal)
+#     if -literal in all_literals:
+#         all_literals.remove(-literal)
+#     if literal in negative_literals:
+#         negative_literals.remove(literal)
+#     if -literal in negative_literals:
+#         negative_literals.remove(-literal)
+#     if literal in positive_literals:
+#         positive_literals.remove(literal)
+#     if -literal in positive_literals:
+#         positive_literals.remove(-literal)
 
 
 # Takes a literal that gets a truthvalue and updates the dictionary truthvalues.
