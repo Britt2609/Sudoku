@@ -198,10 +198,8 @@ def main():
             print("Satisfiable")
         else:
             print("Unsatisfiable")
-            # break
         print(truthvalues)
 
-        # runtime = (time.time() - start_time)
         print("--- %s seconds ---" % runtime)
         print("number of splits: %i" % number_of_splits)
         print("number of backtracks: %i" % number_of_backtracks)
