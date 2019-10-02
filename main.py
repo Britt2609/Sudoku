@@ -33,6 +33,7 @@ def random_choice(literals):
 
     return new_choice
 
+
 class Satisfier():
 
     def __init__(self):
@@ -134,14 +135,6 @@ class Satisfier():
 # Read in sudoku files and solve the sudokus one by one.
 def main():
 
-    # print("What file do you want to use as input?: ")
-    # global SAT_problem_filename
-    # SAT_problem_filename = input("Name: ")
-
-    # print("What filename do you want to use for output?: ")
-    # global SAT_solution_filename
-    # SAT_solution_filename = input("Name: ")
-
     print("Which heuristic would you like to use?\n Type \"heuristic 1\" for the Jereslow Wang,"
           " type \"heuristic 2\" for the MOM\'s")
     global heuristic
@@ -154,9 +147,9 @@ def main():
 
     # Open the file with SAT problems.
 
-    sudoku_file = open("5 sudo.txt", 'r')
-    file_contents = sudoku_file.readlines()
-    sudoku_unsolved = readin(file_contents)
+    # sudoku_file = open("5 sudo.txt", 'r')
+    # file_contents = sudoku_file.readlines()
+    # sudoku_unsolved = readin(file_contents)
     sudokus = read_sudokus("1000 sudokus.txt")
 
     # Open the file with sudoku rules (already in DIMAC notation).
@@ -169,19 +162,23 @@ def main():
 
     with open('output.csv', 'w') as csvFile:
         writer = csv.writer(csvFile)
-        writer.writerow(["runtime, number_of_splits, number_of_backtracks, number_of_simplifications".split(', ')])
+        writer.writerow(["runtime", "number_of_splits", "number_of_backtracks", "number_of_simplifications"])
 
     for problem in sudokus:
         clauses = deepcopy(problem)
-        clauses.extend(rules)
+        rules_copy = deepcopy(rules)
+        clauses.extend(rules_copy)
+
+        # if [] in rules:
+        #     print("empty list")
 
         # Append the sudoku to the clauses.
         # for filled_in in problem:
         #     clauses.insert(0, filled_in)
 
         # Make dictionary to keep track of truth values of literals.
-        lits = list(set([abs(x) for c in clauses for x in c]))
-        truthvalues = {key: None for key in lits}
+        literals = list(set([abs(x) for c in clauses for x in c]))
+        truthvalues = {lit: None for lit in literals}
 
         # Run DP algorithm which checks for unit clauses and pure literals and makes a split when needed.
         satisfier = Satisfier()

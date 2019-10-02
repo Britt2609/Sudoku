@@ -54,3 +54,5 @@ def update_truthvalues(literal, truthvalues):
         truthvalues[lit] = True
     else:
         truthvalues[lit] = False
+
+    lite = lit
