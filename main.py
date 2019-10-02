@@ -168,6 +168,7 @@ def main():
     for problem in sudokus:
         clauses = deepcopy(problem)
         rules_copy = deepcopy(rules)
+        lenght_clauses = len(clauses)
         clauses.extend(rules_copy)
 
         # if [] in rules:
