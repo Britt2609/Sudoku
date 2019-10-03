@@ -1,5 +1,3 @@
-# Updates.py moet nog worden gecommend
-
 import random
 import time
 import csv
@@ -104,6 +102,7 @@ class Satisfier():
             else:
                 choice = random_choice(all_literals)
             self.number_of_splits += 1
+            print(self.number_of_splits)
 
             # Update the truthvalues and clauses with the new choice.
             update_truthvalues(choice, truthvalues)
@@ -137,14 +136,14 @@ def main():
         print("invalid input, split decisions will now be made random")
 
     # Open the file with SAT problems (like 'sudoku.txt').
-    print("Which SAT problem do you want to solve? Please give the file name (in dimacs)")
-    SAT_problem = input("Select: ")
-
-    # Open file
-    problem = read_dimacs(SAT_problem, 'r')
+    # print("Which SAT problem do you want to solve? Please give the file name (in dimacs)")
+    # SAT_problem = input("Select: ")
+    #
+    # # Open file
+    # problem = read_dimacs(SAT_problem, 'r')
 
     # For experimenting
-    sudokus = read_sudokus("1000 sudokus.txt")
+    sudokus = read_sudokus("hard_sudokus.txt")
 
     # Append the rules to the clauses (only for experimenting).
     rules = read_dimacs('sudoku-rules.txt')
@@ -154,7 +153,11 @@ def main():
         writer = csv.writer(csvFile)
         writer.writerow(["runtime", "number_of_splits", "number_of_backtracks", "number_of_simplifications"])
 
-    for problem in sudokus:
+    # for problem in sudokus:
+    for i in range(1, 5):
+        sudo = "difficult%i.txt" % i
+        problem = read_dimacs(sudo)
+        print(problem)
         # Make deepcopy for if we want to solve more SAT's at once.
         clauses = deepcopy(problem)
         rules_copy = deepcopy(rules)
@@ -192,16 +195,6 @@ def main():
             with open('output.csv', 'a') as csvFile:
                 writer = csv.writer(csvFile)
                 writer.writerow([runtime, number_of_splits, number_of_backtracks, number_of_simplifications])
-            # numb = 0
-            # for literal in truthvalues:
-            #     if truthvalues[literal] is True:
-            #         print(literal)
-            #         numb += 1
-
 
 # Call the main function
-
-
-# Keep track of runtime.
-
 main()
