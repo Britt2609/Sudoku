@@ -115,7 +115,6 @@ class Satisfier():
                 choice = heuristic2(clauses_before_splitting)
             else:
                 choice = random_choice(all_literals)
-
             self.number_of_splits += 1
 
             update_truthvalues(choice, truthvalues)
@@ -148,16 +147,11 @@ def main():
 
     # Open the file with SAT problems.
 
-    # sudoku_file = open("5 sudo.txt", 'r')
+    # sudoku_file = open("damnhard_converted_2.txt", 'r')
     # file_contents = sudoku_file.readlines()
-    # sudoku_unsolved = readin(file_contents)
+    # problem = readin(file_contents)
     sudokus = read_sudokus("1000 sudokus.txt")
-
-    # Open the file with sudoku rules (already in DIMAC notation).
-    # sudoku_rules = open('sudoku-rules.txt', 'r')
-    # rules = sudoku_rules.readlines()
-    # sudoku_rules.close()
-
+    # problem = read_dimacs("damnhard_converted_0.txt", 'r')
     # Append the rules to the clauses.
     rules = read_dimacs('sudoku-rules.txt')
 
@@ -169,13 +163,6 @@ def main():
         clauses = deepcopy(problem)
         rules_copy = deepcopy(rules)
         clauses.extend(rules_copy)
-
-        # if [] in rules:
-        #     print("empty list")
-
-        # Append the sudoku to the clauses.
-        # for filled_in in problem:
-        #     clauses.insert(0, filled_in)
 
         # Make dictionary to keep track of truth values of literals.
         literals = list(set([abs(x) for c in clauses for x in c]))
@@ -205,15 +192,16 @@ def main():
         print("number of splits: %i" % number_of_splits)
         print("number of backtracks: %i" % number_of_backtracks)
 
-        with open('output.csv', 'a') as csvFile:
-            writer = csv.writer(csvFile)
-            writer.writerow([runtime, number_of_splits, number_of_backtracks, number_of_simplifications])
+        if number_of_splits != 0:
+            with open('output.csv', 'a') as csvFile:
+                writer = csv.writer(csvFile)
+                writer.writerow([runtime, number_of_splits, number_of_backtracks, number_of_simplifications])
         # numb = 0
         # for literal in truthvalues:
         #     if truthvalues[literal] is True:
         #         print(literal)
         #         numb += 1
-        # print(numb)
+
 
 # Call the main function
 

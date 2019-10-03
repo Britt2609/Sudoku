@@ -1,62 +1,48 @@
 from _pydecimal import Decimal
 
-# import numpy as np
 
-
+# Two-sided Jeroslow Wang heuristic.
+# For every literal take J(I) = sum of (2 to the power -(number of occurrences)).
+# Then take the highest value of J(I)+J(-I) and choose the most occurring of I and -I.
 def heuristic1(clauses, truthvalues):
-    # Jeroslow Wang
-    # Count how many times all literals occur and then choose the most common for the split.
-
     choice = clauses[0][0]
-    best_jw = 0
+    best_total = 0
     for literal in truthvalues:
         if truthvalues[literal] is None:
-            pos = 0
-            neg = 0
+            pos_score = 0
+            neg_score = 0
             for clause in clauses:
                 if literal in clause:
-                    pos += Decimal(2 ** -len(clause))
+                    pos_score += Decimal(2 ** -len(clause))
                 elif -literal in clause:
-                    neg += Decimal(2 ** -len(clause))
-            if (pos + neg) > best_jw:
-                best_jw = pos + neg
-                # choose the positive or negative literal? positive gives less backtracks.
-                choice = literal
-                # if pos >= neg:
-                #     choice = literal
-                # else:
-                #     choice = -literal
-    # print(best_jw)
-    # print(choice)
+                    neg_score += Decimal(2 ** -len(clause))
+            # Keep track of the best score.
+            if (pos_score + neg_score) > best_total:
+                best_total = pos_score + neg_score
+                # Choose the positive or negative literal (the most occuring).
+                if pos_score >= neg_score:
+                    choice = literal
+                else:
+                    choice = -literal
     return choice
 
-    # diction = {}
-    # for clause in clauses:
-    #     for literal in clause:
-    #         if abs(literal) not in diction:
-    #             diction[abs(literal)] = 1
-    #         else:
-    #             diction[abs(literal)] += 1
-    # # print(diction)
-    #
-    # maxi = max(diction, key=diction.get)
-    # # print(maxi)
-    # return maxi
 
-
-k = 1
-
-
+    # MOM's heuristic
+    # Take the smallest clauses and count how many times all literals occur.
+    # Then pick the most occurring for the split.
 def heuristic2(clauses):
-    # count how many times all literals occur and then pick the highest value for the split.
+    k = 2
     small_diction = {}
     pos_diction = {}
     neg_diction = {}
     extra_list = []
+
+    # Get the length of the smallest clauses
     min_length = len(min(clauses, key=len))
     for clause in clauses:
         if len(clause) == min_length:
             for literal in clause:
+                # Count the number of occurrences for every positive and negative literal
                 if literal > 0:
                     if literal not in pos_diction:
                         extra_list.append(literal)
@@ -72,12 +58,14 @@ def heuristic2(clauses):
     for literal in extra_list:
         pos_count = pos_diction[literal] if literal in pos_diction else 0
         neg_count = neg_diction[literal] if literal in neg_diction else 0
+        # Calculate the scores per pair of positive and negative literal.
         score = (pos_count + neg_count) * 2 ** k + pos_count * neg_count
         small_diction[literal] = score
 
     if not small_diction:
         return clauses[0][0]
 
+    # Choose the literal with the best score.
     choice = max(small_diction, key=small_diction.get)
     return choice
 
