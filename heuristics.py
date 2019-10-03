@@ -27,7 +27,7 @@ def heuristic1(clauses, truthvalues):
     return choice
 
 
-    # MOM's heuristic
+    # MOM's heuristic.
     # Take the smallest clauses and count how many times all literals occur.
     # Then pick the most occurring for the split.
 def heuristic2(clauses):
@@ -37,12 +37,12 @@ def heuristic2(clauses):
     neg_diction = {}
     extra_list = []
 
-    # Get the length of the smallest clauses
+    # Get the length of the smallest clauses.
     min_length = len(min(clauses, key=len))
     for clause in clauses:
         if len(clause) == min_length:
             for literal in clause:
-                # Count the number of occurrences for every positive and negative literal
+                # Count the number of occurrences for every positive and negative literal.
                 if literal > 0:
                     if literal not in pos_diction:
                         extra_list.append(literal)
@@ -65,7 +65,7 @@ def heuristic2(clauses):
     if not small_diction:
         return clauses[0][0]
 
-    # Choose the literal with the best score.
+    # Get the pair of literals with the best score and choose the positive literal to be True.
     choice = max(small_diction, key=small_diction.get)
     return choice
 

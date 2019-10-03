@@ -7,8 +7,9 @@ def update_clauses(clauses, truthvalues):
     for clause in [*clauses]:
         clause_not_removed = True
 
+        # Remove clauses that contain a positive or negative literal that's True.
+        # Remove the literals that are True from all clauses.
         for literal in [abs(literal) for literal in clause]:
-
             if truthvalues[literal] is True:
                 if (literal in clause) & clause_not_removed:
                     stuck = True
@@ -29,22 +30,6 @@ def update_clauses(clauses, truthvalues):
                     clause.remove(literal)
 
     return stuck
-
-
-# def update_literals(literal, negative_literals, positive_literals, all_literals):
-#
-#     if literal in all_literals:
-#         all_literals.remove(literal)
-#     if -literal in all_literals:
-#         all_literals.remove(-literal)
-#     if literal in negative_literals:
-#         negative_literals.remove(literal)
-#     if -literal in negative_literals:
-#         negative_literals.remove(-literal)
-#     if literal in positive_literals:
-#         positive_literals.remove(literal)
-#     if -literal in positive_literals:
-#         positive_literals.remove(-literal)
 
 
 # Takes a literal that gets a truthvalue and updates the dictionary truthvalues.

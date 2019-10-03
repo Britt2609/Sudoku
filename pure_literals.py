@@ -12,7 +12,7 @@ def get_pure_literals(clauses):
                 # if literal not in positive_literals:
                 positive_literals.add(literal)
 
-    # Get the difference of the lists
+    # Get the difference of the lists (list of pure literals)
     disjunction = positive_literals ^ negative_literals
     list_difference = []
     for literal in disjunction:
