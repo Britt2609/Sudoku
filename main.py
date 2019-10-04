@@ -3,7 +3,7 @@ import time
 import csv
 from copy import deepcopy
 
-from heuristics import heuristic1, heuristic2
+from heuristics import heuristic1, heuristic2, heuristic3
 from io_tools import read_sudokus, read_dimacs
 from pure_literals import get_pure_literals
 from updates import update_clauses, update_truthvalues
@@ -95,14 +95,15 @@ class Satisfier():
                     all_literals.append(literal)
 
             # Check which heuristic is chosen, if input is invalid, choose random.
-            if heuristic == "heuristic 1":
+            if heuristic == "1":
                 choice = heuristic1(clauses_before_splitting, truthvalues)
-            elif heuristic == "heuristic 2":
+            elif heuristic == "2":
                 choice = heuristic2(clauses_before_splitting)
+            elif heuristic == "3":
+                choice = heuristic3(clauses_before_splitting)
             else:
                 choice = random_choice(all_literals)
             self.number_of_splits += 1
-            print(self.number_of_splits)
 
             # Update the truthvalues and clauses with the new choice.
             update_truthvalues(choice, truthvalues)
@@ -127,74 +128,84 @@ class Satisfier():
 # Read in sudoku files and solve the sudokus one by one.
 def main():
 
-    print("Which heuristic would you like to use?\n Type \"heuristic 1\" for the Jereslow Wang,"
-          " type \"heuristic 2\" for the MOM\'s")
+    # Open the file with SAT problems (like 'sudoku.txt').
+    print("Which SAT problem do you want to solve?\n"
+          "Please give the file name (written in dimacs, consisting of 1 SAT problem)")
+    SAT_problem = input("file name: ")
+
+    # If it is a sudoku problem, add the sudoku rules.
+    print("Do you want to add sudoku rules to your file?")
+    sudoku = input("Type yes or no: ")
+    if sudoku == "yes":
+        sudo = True
+    else:
+        sudo = False
+
+    # Ask which heuristic should be used for splitting
+    print("Which heuristic would you like to use?\n Type \"1\" for the Jereslow Wang,"
+          " type \"2\" for the MOM\'s")
     global heuristic
     heuristic = input("Select: ")
 
-    if heuristic != "heuristic 1" and heuristic != "heuristic 2":
-        print("invalid input, split decisions will now be made random")
+    if heuristic != "1" and heuristic != "2" and heuristic != "3":
+        print("Invalid input, split decisions will now be made random")
 
-    # Open the file with SAT problems (like 'sudoku.txt').
-    # print("Which SAT problem do you want to solve? Please give the file name (in dimacs)")
-    # SAT_problem = input("Select: ")
-    #
-    # # Open file
-    # problem = read_dimacs(SAT_problem, 'r')
+    # Open file
+    problem = read_dimacs(SAT_problem)
 
-    # For experimenting
-    sudokus = read_sudokus("hard_sudokus.txt")
-
-    # Append the rules to the clauses (only for experimenting).
-    rules = read_dimacs('sudoku-rules.txt')
+    # Append the rules to the clauses (when we have a sudoku problem).
+    if sudo:
+        rules = read_dimacs('sudoku-rules.txt')
 
     # Make csv file to get the data for experimenting.
     with open('output.csv', 'w') as csvFile:
         writer = csv.writer(csvFile)
-        writer.writerow(["runtime", "number_of_splits", "number_of_backtracks", "number_of_simplifications"])
+        writer.writerow(["The results of the algorithm: "])
 
-    # for problem in sudokus:
-    for i in range(1, 5):
-        sudo = "difficult%i.txt" % i
-        problem = read_dimacs(sudo)
-        print(problem)
-        # Make deepcopy for if we want to solve more SAT's at once.
-        clauses = deepcopy(problem)
+    # Make deepcopy for if we want to solve more SAT's at once.
+    clauses = deepcopy(problem)
+    if sudo:
         rules_copy = deepcopy(rules)
         clauses.extend(rules_copy)
 
-        # Make dictionary to keep track of truth values of literals.
-        literals = list(set([abs(x) for c in clauses for x in c]))
-        truthvalues = {lit: None for lit in literals}
+    # Make dictionary to keep track of truth values of literals.
+    literals = list(set([abs(x) for c in clauses for x in c]))
+    truthvalues = {lit: None for lit in literals}
 
-        # Run DP algorithm which checks for unit clauses and pure literals and makes a split when needed.
-        satisfier = Satisfier()
-        start_time = time.time()
-        _, truthvalues, result = satisfier.solve(clauses, truthvalues)
-        runtime = time.time() - start_time
-        number_of_splits = satisfier.number_of_splits
-        number_of_backtracks = satisfier.number_of_backtracks
-        number_of_simplifications = satisfier.number_of_simplifications
+    # Run DP algorithm which checks for unit clauses and pure literals and makes a split when needed.
+    satisfier = Satisfier()
+    start_time = time.time()
+    _, truthvalues, result = satisfier.solve(clauses, truthvalues)
+    runtime = time.time() - start_time
+    number_of_splits = satisfier.number_of_splits
+    number_of_backtracks = satisfier.number_of_backtracks
+    number_of_simplifications = satisfier.number_of_simplifications
 
-        # If we found a solution and we have literals that don't have a value yet,
-        # we can assign them a truthvalue randomly.
-        if result:
-            for literal in truthvalues:
-                if truthvalues[literal] is None:
-                    truthvalues[literal] = random.choice([True, False])
-            print("Satisfiable")
-        else:
-            print("Unsatisfiable")
-        print(truthvalues)
+    # If we found a solution and we have literals that don't have a value yet,
+    # we can assign them a truthvalue randomly.
+    if result:
+        for literal in truthvalues:
+            if truthvalues[literal] is None:
+                truthvalues[literal] = random.choice([True, False])
+        print("Satisfiable")
+        satisfiable = "Satisfiable"
+    else:
+        print("Unsatisfiable")
+        satisfiable = "Unsatisfiable"
 
-        print("--- %s seconds ---" % runtime)
-        print("number of splits: %i" % number_of_splits)
-        print("number of backtracks: %i" % number_of_backtracks)
+    print(truthvalues)
+    print("--- %s seconds ---" % runtime)
+    print("number of splits: %i" % number_of_splits)
+    print("number of backtracks: %i" % number_of_backtracks)
 
-        if number_of_splits != 0:
-            with open('output.csv', 'a') as csvFile:
-                writer = csv.writer(csvFile)
-                writer.writerow([runtime, number_of_splits, number_of_backtracks, number_of_simplifications])
+    with open('output.csv', 'a') as csvFile:
+        writer = csv.writer(csvFile)
+        writer.writerow(["runtime: %i" % runtime, "splits: %i" % number_of_splits,
+                         "backtracks: %i" % number_of_backtracks, "simplifications: %i" % number_of_simplifications])
+        for literal in truthvalues:
+            if truthvalues[literal] is True:
+                writer.writerow([literal])
+                writer.writerow([satisfiable])
 
 # Call the main function
 main()
