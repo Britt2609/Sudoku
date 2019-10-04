@@ -196,12 +196,12 @@ def main():
 
     with open('output.csv', 'a') as csvFile:
         writer = csv.writer(csvFile)
-        writer.writerow(["runtime: %i" % runtime, "splits: %i" % number_of_splits,
-                         "backtracks: %i" % number_of_backtracks, "simplifications: %i" % number_of_simplifications])
+        writer.writerow(["runtime: %i" % runtime, " splits: %i" % number_of_splits,
+                         " backtracks: %i" % number_of_backtracks, " simplifications: %i" % number_of_simplifications])
         for literal in truthvalues:
             if truthvalues[literal] is True:
                 writer.writerow([literal])
-                writer.writerow([satisfiable])
+        writer.writerow([satisfiable])
 
 # Call the main function
 main()
