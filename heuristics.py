@@ -29,7 +29,7 @@ def heuristic1(clauses, truthvalues):
 
     # MOM's heuristic.
     # Take the smallest clauses and count how many times all literals occur.
-    # Then pick the most occurring for the split.
+    # Then pick the literal with the best score for the split.
 def heuristic2(clauses):
     k = 2
     small_diction = {}
@@ -71,6 +71,9 @@ def heuristic2(clauses):
     return choice
 
 
+    # MAXO's heuristic.
+    # Take all the clauses and count how many times all literals occur.
+    # Then pick the literal with the best score for the split.
 def heuristic3(clauses):
     k = 2
     small_diction = {}

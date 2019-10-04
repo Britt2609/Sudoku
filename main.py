@@ -143,7 +143,7 @@ def main():
 
     # Ask which heuristic should be used for splitting
     print("Which heuristic would you like to use?\n Type \"1\" for the Jereslow Wang,"
-          " type \"2\" for the MOM\'s")
+          " type \"2\" for the MOM\'s, type \"3\" for the MAXI\'s")
     global heuristic
     heuristic = input("Select: ")
 
@@ -151,20 +151,16 @@ def main():
         print("Invalid input, split decisions will now be made random")
 
     # Open file
-    problem = read_dimacs(SAT_problem)
-
-    # Append the rules to the clauses (when we have a sudoku problem).
-    if sudo:
-        rules = read_dimacs('sudoku-rules.txt')
+    clauses = read_dimacs(SAT_problem)
 
     # Make csv file to get the data for experimenting.
     with open('output.csv', 'w') as csvFile:
         writer = csv.writer(csvFile)
         writer.writerow(["The results of the algorithm: "])
 
-    # Make deepcopy for if we want to solve more SAT's at once.
-    clauses = deepcopy(problem)
+    # Append the rules to the clauses (when we have a sudoku problem).
     if sudo:
+        rules = read_dimacs('sudoku-rules.txt')
         rules_copy = deepcopy(rules)
         clauses.extend(rules_copy)
 
